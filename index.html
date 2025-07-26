@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "\"The wearer knows where the shoe pinches\". In this sentence, 'where' is a -",
+          options: {
+            a: "Relative pronoun",
+            b: "Demonstrative pronoun",
+            c: "Personal pronoun",
+            d: "Interrogative pronoun",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বাক্যে 'where' (যেখানে) শব্দটি একটি Relative Pronoun (আপেক্ষিক সর্বনাম) হিসেবে ব্যবহৃত হয়েছে। এটি বাক্যের দুটি অংশকে যুক্ত করছে এবং 'the shoe pinches' (জুতোটা কোথায় কামড়াচ্ছে) অংশটি 'the wearer knows' (পরিধানকারী জানে) অংশটিকে ব্যাখ্যা করছে। Relative Pronoun সাধারণত noun বা pronoun কে নির্দেশ করে এবং দুটি বাক্য বা বাক্যাংশকে সংযুক্ত করে।</p><br><p>অপশন (A) Relative pronoun (আপেক্ষিক সর্বনাম): যে pronoun দুটি বাক্য বা বাক্যাংশকে যুক্ত করে এবং পূর্ববর্তী noun বা pronoun কে নির্দেশ করে, তাকে Relative Pronoun বলে। যেমন: who, whom, whose, which, that, where, when, why। এই বাক্যে 'where' একটি Relative Pronoun, কারণ এটি 'the wearer knows' এবং 'the shoe pinches' এই দুটি অংশকে যুক্ত করেছে এবং একটি স্থানের তথ্য দিচ্ছে।</p><br><p>অপশন (B) Demonstrative pronoun (নির্দেশক সর্বনাম): যে pronoun কোনো ব্যক্তি বা বস্তুকে নির্দেশ করে, তাকে Demonstrative Pronoun বলে। যেমন: this, that, these, those।</p><br><p>অপশন (C) Personal pronoun (ব্যক্তিবাচক সর্বনাম): যে pronoun ব্যক্তি, বস্তু বা প্রাণীর পরিবর্তে বসে, তাকে Personal Pronoun বলে। যেমন: I, me, you, he, him, she, her, it, we, us, they, them।</p><br><p>অপশন (D) Interrogative pronoun (প্রশ্নবোধক সর্বনাম): যে pronoun প্রশ্ন জিজ্ঞাসা করতে ব্যবহৃত হয়, তাকে Interrogative Pronoun বলে। যেমন: who, what, which, whose, whom।</p>",
+        },
+        {
+          id: 2,
+          question:
+            "Which one of the following words is an example of a distributive pronoun?",
+          options: {
+            a: "such",
+            b: "either",
+            c: "that",
+            d: "any",
+          },
+          correct: "b",
+          explanation:
+            "<p>Distributive pronoun (বিভাজক সর্বনাম) সেই pronoun কে বোঝায় যা একটি দল বা গোষ্ঠীর মধ্যে প্রতিটি ব্যক্তি বা বস্তুকে আলাদাভাবে নির্দেশ করে। 'Each', 'every', 'either', 'neither', 'none' এইগুলো Distributive Pronoun এর উদাহরণ।</p><br><p>অপশন (A) 'such' (সাচ) একটি Indefinite Pronoun (অনির্দিষ্ট সর্বনাম) অথবা Determiner হিসেবে ব্যবহৃত হতে পারে।</p><br><p>অপশন (B) 'either' (আইদার) একটি Distributive Pronoun। এটি 'দুটির মধ্যে যেকোনো একটি' বোঝাতে ব্যবহৃত হয়। যেমন: 'Either of them can go.' (তাদের দুজনের মধ্যে যেকোনো একজন যেতে পারে)।</p><br><p>অপশন (C) 'that' (দ্যাট) একটি Demonstrative Pronoun (নির্দেশক সর্বনাম) বা Relative Pronoun (আপেক্ষিক সর্বনাম) হতে পারে।</p><br><p>অপশন (D) 'any' (এনি) একটি Indefinite Pronoun (অনির্দিষ্ট সর্বনাম) অথবা Determiner।</p>",
+        },
+        {
+          id: 3,
+          question: "_ amazing song haunted me for a long time.",
+          options: {
+            a: "These",
+            b: "Those",
+            c: "Thus",
+            d: "That",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে 'amazing song' একটি singular noun (একবচন বিশেষ্য)। তাই, এর আগে একটি singular demonstrative pronoun বা determiner বসাতে হবে।</p><br><p>অপশন (A) 'These' (দিজ) একটি plural demonstrative pronoun (বহুবচন নির্দেশক সর্বনাম) এবং এটি plural noun এর আগে বসে। যেমন: These songs।</p><br><p>অপশন (B) 'Those' (দোজ) একটি plural demonstrative pronoun এবং এটি plural noun এর আগে বসে। যেমন: Those songs।</p><br><p>অপশন (C) 'Thus' (দাস) একটি Adverb (ক্রিয়া বিশেষণ), যার অর্থ 'এইভাবে' বা 'সুতরাং'। এটি noun এর আগে বসে না।</p><br><p>অপশন (D) 'That' (দ্যাট) একটি singular demonstrative pronoun এবং এটি singular noun এর আগে বসে। 'That amazing song' মানে 'সেই অসাধারণ গানটি'। এটি বাক্যের অর্থকে সম্পূর্ণ করে।</p>",
+        },
+        {
+          id: 4,
+          question:
+            "Pick the correct part to fill in the gap of the following sentence: Each of the sons followed _ father's trade.",
+          options: {
+            a: "their",
+            b: "her",
+            c: "whose",
+            d: "his",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যে 'Each of the sons' (প্রতিটি ছেলে) বাক্যের Subject (কর্তা) হিসেবে ব্যবহৃত হয়েছে। 'Each' একটি Distributive Pronoun এবং এটি singular (একবচন) হিসেবে বিবেচিত হয়, এমনকি এর পরে plural noun (sons) থাকলেও। যখন 'each' বা 'every' দিয়ে কোনো বাক্য শুরু হয়, তখন তাদের পরে singular verb এবং singular possessive pronoun (একবচন সম্পর্কবাচক সর্বনাম) ব্যবহৃত হয়। যেহেতু 'sons' masculine (পুংলিঙ্গ) হতে পারে, তাই 'his' ব্যবহার করা সঠিক।</p><br><p>অপশন (A) 'their' (দেয়ার) একটি plural possessive pronoun, যা 'each' এর সাথে singular context এ বসে না।</p><br><p>অপশন (B) 'her' (হার) একটি feminine singular possessive pronoun, যা masculine context এ ব্যবহৃত হবে না।</p><br><p>অপশন (C) 'whose' (হুজ) একটি Relative Pronoun বা Interrogative Pronoun, যা এখানে প্রযোজ্য নয়।</p><br><p>অপশন (D) 'his' (হিজ) একটি singular masculine possessive pronoun, যা 'each of the sons' এর সাথে সঙ্গতিপূর্ণ।</p>",
+        },
+        {
+          id: 5,
+          question: "One should be careful about _ duty.",
+          options: {
+            a: "his",
+            b: "her",
+            c: "one's",
+            d: "the",
+          },
+          correct: "c",
+          explanation:
+            "<p>যখন একটি বাক্যের Subject হিসেবে 'one' (একজন) ব্যবহৃত হয়, তখন এর possessive form (সম্বন্ধ পদ) হিসেবে 'one's' (ওয়ানস) ব্যবহার করা হয়। এটি একটি সাধারণ নিয়ম যা ইংরেজি ব্যাকরণে অনুসরণ করা হয়।</p><br><p>অপশন (A) 'his' (হিজ) ব্যবহৃত হয় যখন Subject পুরুষবাচক একবচন হয় (যেমন: he)।</p><br><p>অপশন (B) 'her' (হার) ব্যবহৃত হয় যখন Subject নারীবাচক একবচন হয় (যেমন: she)।</p><br><p>অপশন (C) 'one's' (ওয়ানস) হলো 'one' এর সঠিক possessive form। এই বাক্যটিতে 'one' একটি সাধারণ ব্যক্তিকে বোঝাতে ব্যবহৃত হয়েছে, তাই 'one's' ব্যবহার করা সঠিক।</p><br><p>অপশন (D) 'the' (দা) একটি Article (পদ), যা এখানে possessive pronoun এর স্থানে ব্যবহৃত হতে পারে না।</p>",
+        },
+        {
+          id: 6,
+          question:
+            "The children studied in a classroom _ windows were never opened.",
+          options: {
+            a: "that",
+            b: "which",
+            c: "where",
+            d: "whose",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে একটি Relative Pronoun (আপেক্ষিক সর্বনাম) এর প্রয়োজন, যা 'classroom' এর জানালাগুলোর মালিকানা বা সম্পর্ক নির্দেশ করবে।</p><br><p>অপশন (A) 'that' (দ্যাট) একটি Relative Pronoun হতে পারে, কিন্তু এটি সাধারণত বস্তু বা ব্যক্তি বোঝাতে ব্যবহৃত হয় এবং মালিকানা বোঝায় না।</p><br><p>অপশন (B) 'which' (উইচ) একটি Relative Pronoun হতে পারে, যা বস্তু বোঝাতে ব্যবহৃত হয়, কিন্তু 'which windows' বলা যায় না যখন মালিকানা বোঝানো হয়।</p><br><p>অপশন (C) 'where' (হোয়্যার) একটি Relative Adverb (আপেক্ষিক ক্রিয়া বিশেষণ) যা স্থান বোঝাতে ব্যবহৃত হয়। 'where the windows were never opened' বলতে পারেন, কিন্তু বাক্যের গঠন অনুযায়ী 'windows' এর আগে সরাসরি একটি possessive সম্পর্ক স্থাপন করতে হবে।</p><br><p>অপশন (D) 'whose' (হুজ) একটি Relative Pronoun, যা ব্যক্তি বা বস্তুর মালিকানা বা সম্পর্ক বোঝাতে ব্যবহৃত হয়। 'whose windows' (যার জানালাগুলো) বাক্যটিকে সম্পূর্ণ এবং সঠিক করে তোলে।</p>",
+        },
+        {
+          id: 7,
+          question: "My uncle has three sons, _ work in the same office.",
+          options: {
+            a: "all of them",
+            b: "who all",
+            c: "they all",
+            d: "all of whom",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যে দুটি অংশকে যুক্ত করতে একটি Relative Pronoun এর প্রয়োজন। 'My uncle has three sons' একটি স্বাধীন বাক্য। পরের অংশটি এই sons দের সম্পর্কে অতিরিক্ত তথ্য দিচ্ছে। এক্ষেত্রে Relative Pronoun 'whom' বা 'who' ব্যবহৃত হয়, যা antecedent (পূর্ববর্তী পদ) কে নির্দেশ করে। যেহেতু 'sons' এর পরে একটি non-restrictive clause (সীমাবদ্ধতাহীন বাক্যাংশ) আছে এবং 'all' এর সাথে ব্যবহৃত হচ্ছে, তাই 'all of whom' ব্যবহার করা সবচেয়ে উপযুক্ত।</p><br><p>অপশন (A) 'all of them' (অল অফ দেম) ব্যাকরণগতভাবে ভুল নয়, তবে একটি Formal Context (আনুষ্ঠানিক প্রেক্ষাপট) এ Relative Pronoun ব্যবহার করা বেশি প্রচলিত। এটি দুটি বাক্যকে সংযুক্ত করে না, বরং দুটি আলাদা বাক্য হিসেবে কাজ করে।</p><br><p>অপশন (B) 'who all' (হু অল) এটি একটি informal expression (অনানুষ্ঠানিক অভিব্যক্তি) এবং সাধারণত Formal Writing (আনুষ্ঠানিক লেখায়) ব্যবহৃত হয় না।</p><br><p>অপশন (C) 'they all' (দে অল) এটি একটি নতুন বাক্যের Subject হতে পারত, কিন্তু এখানে একটি কমা দিয়ে যুক্ত হওয়ায় Relative Pronoun প্রয়োজন।</p><br><p>অপশন (D) 'all of whom' (অল অফ হুম) এটি একটি সঠিক গঠন। 'whom' এখানে 'sons' কে নির্দেশ করছে এবং এটি 'work' ক্রিয়ার Subject হিসেবে কাজ করছে। Relative Pronoun এর আগে preposition (যেমন: 'of') ব্যবহৃত হতে পারে।</p>",
+        },
+        {
+          id: 8,
+          question: "Which of the following has not used relative pronoun?",
+          options: {
+            a: "I like people who smile a lot",
+            b: "There is a program tonight which you might like",
+            c: "Which book do you like?",
+            d: "Those who want tickets can get them from the office.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Relative Pronoun (আপেক্ষিক সর্বনাম) হলো সেই pronoun যা দুটি বাক্য বা বাক্যাংশকে যুক্ত করে এবং পূর্ববর্তী noun বা pronoun কে নির্দেশ করে। অন্যদিকে, Interrogative Pronoun (প্রশ্নবোধক সর্বনাম) প্রশ্ন জিজ্ঞাসা করতে ব্যবহৃত হয়।</p><br><p>অপশন (A) 'I like people <strong>who</strong> smile a lot': এখানে 'who' একটি Relative Pronoun, যা 'people' কে নির্দেশ করছে এবং দুটি অংশকে যুক্ত করছে।</p><br><p>অপশন (B) 'There is a program tonight <strong>which</strong> you might like': এখানে 'which' একটি Relative Pronoun, যা 'program' কে নির্দেশ করছে এবং দুটি অংশকে যুক্ত করছে।</p><br><p>অপশন (C) '<strong>Which</strong> book do you like?': এখানে 'Which' একটি Interrogative Pronoun, কারণ এটি প্রশ্ন জিজ্ঞাসা করতে ব্যবহৃত হয়েছে এবং এর পরে একটি noun (book) আছে, যা নির্দেশ করে এটি একটি Interrogative Adjective (প্রশ্নবোধক বিশেষণ) হিসেবেও কাজ করতে পারে। কিন্তু এখানে এটি Relative Pronoun নয়।</p><br><p>অপশন (D) 'Those <strong>who</strong> want tickets can get them from the office.': এখানে 'who' একটি Relative Pronoun, যা 'Those' (যারা) কে নির্দেশ করছে এবং দুটি অংশকে যুক্ত করছে।</p>",
+        },
+        {
+          id: 9,
+          question: "Control Farhana! Don't get hysterical. _",
+          options: {
+            a: "you",
+            b: "self",
+            c: "oneself",
+            d: "yourself",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে 'Farhana' কে সরাসরি সম্বোধন করে একটি আদেশ দেওয়া হচ্ছে। যখন Subject (কর্তা) নিজে কোনো কাজ করে এবং Object (কর্ম) ও Subject একই ব্যক্তি হয়, তখন Reflexive Pronoun (আত্মবাচক সর্বনাম) ব্যবহৃত হয়। 'Farhana' একটি দ্বিতীয় পুরুষ একবচন (singular second person) এবং এক্ষেত্রে Reflexive Pronoun হিসেবে 'yourself' ব্যবহার করা হয়।</p><br><p>অপশন (A) 'you' (ইউ) একটি Personal Pronoun, যা Subject বা Object হিসেবে ব্যবহৃত হয়, কিন্তু এখানে Reflexive Pronoun প্রয়োজন।</p><br><p>অপশন (B) 'self' (সেলফ) একটি noun এবং এটি pronoun এর সাথে যুক্ত হয়ে Reflexive Pronoun তৈরি করে (যেমন: myself, yourself)। এটি একা ব্যবহৃত হয় না।</p><br><p>অপশন (C) 'oneself' (ওয়ানসেলফ) হলো 'one' এর Reflexive Pronoun, যা সাধারণ কোনো ব্যক্তিকে বোঝাতে ব্যবহৃত হয়, কিন্তু এখানে নির্দিষ্টভাবে 'Farhana' কে বোঝানো হচ্ছে।</p><br><p>অপশন (D) 'yourself' (ইওরসেলফ) হলো 'you' এর Reflexive Pronoun। 'Control yourself' মানে 'নিজেকে নিয়ন্ত্রণ করো', যা এই বাক্যের অর্থকে সম্পূর্ণ করে।</p>",
+        },
+        {
+          id: 10,
+          question: "_ get the office.",
+          options: {
+            a: "All of",
+            b: "Both of",
+            c: "Neither of",
+            d: "Some of",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বাক্যে একটি verb (ক্রিয়া) অনুপস্থিত এবং একটি subject (কর্তা) প্রয়োজন। বাক্যটি অসম্পূর্ণ এবং এর অপশনগুলো স্পষ্ট নয়। তবে, যদি এটি একটি প্রশ্ন হিসেবে ধরা হয় যেখানে একটি উপযুক্ত pronoun বসাতে হবে যা বাক্যটিকে অর্থপূর্ণ করবে এবং অপশনগুলো থেকে বেছে নিতে হবে, তাহলে কিছুটা অনুমান করা যায়।</p><br><p>যদি প্রশ্নটি এমন হতো: 'None of the two boys/girls got the office.' বা 'Neither of the two boys/girls got the office.', তাহলে 'Neither of' (দু'জনের কেউই না) ব্যবহার করা যেতে পারে, কারণ এটি singular verb নেয়। কিন্তু 'get the office' একটি অসম্পূর্ণ বাক্যাংশ।</p><br><p>যদি প্রশ্নটি এমন হয় যে 'get the office' এর আগে কোন pronoun বসবে, তাহলে: </p><br><p>অপশন (A) 'All of' (অল অফ): এটি plural verb নেয়। যেমন: All of them get the office. (তাদের সবাই অফিস পায়)।</p><br><p>অপশন (B) 'Both of' (বোথ অফ): এটি plural verb নেয়। যেমন: Both of them get the office. (তাদের দুজনেই অফিস পায়)।</p><br><p>অপশন (C) 'Neither of' (নাইদার অফ): এটি singular verb নেয়। যেমন: Neither of them gets the office. (তাদের দুজনের কেউই অফিস পায় না)। যদি এখানে verb টি 'gets' হতো, তবে 'Neither of' সঠিক হতো। যেহেতু 'get' আছে, এটি plural verb এর ইঙ্গিত দেয়।</p><br><p>অপশন (D) 'Some of' (সাম অফ): এটি plural verb নেয়। যেমন: Some of them get the office. (তাদের মধ্যে কেউ কেউ অফিস পায়)।</p><br><p>তবে, যেহেতু প্রদত্ত উত্তরে 'Neither of' দেওয়া আছে, এবং প্রশ্নটি অসম্পূর্ণ, তাই এটি অনুমান করা যেতে পারে যে, এই প্রশ্নটির সঠিক ফর্মেশন হয়তো এমন ছিল যেখানে singular verb প্রয়োজন ছিল, অথবা 'get the office' বাক্যটি কোনো বিশেষ অর্থে ব্যবহৃত হয়েছে। কিন্তু প্রদত্ত উত্তর এবং অপশনগুলোর মধ্যে, 'Neither of' যদি Subject হয়, তাহলে 'gets' হওয়া উচিত। কিন্তু যদি এটি একটি অসম্পূর্ণ প্রশ্ন হয় এবং উত্তরটি কেবল একটি অপশনকে নির্দেশ করে, তবে 'Neither of' অন্য অপশনগুলির মতো একটি Possessive Pronoun এর পূর্বে বসতে পারে। কিন্তু প্রদত্ত ফরম্যাটে, এটি একটি Subject হিসেবে ব্যবহৃত হতে পারে। এটি সম্ভবত একটি ত্রুটিপূর্ণ প্রশ্ন বা উত্তর।</p><br><p>কিন্তু যেহেতু সঠিক উত্তর 'c' দেওয়া আছে, এবং সাধারণত 'Neither of' এর পর singular verb বসে, তাহলে প্রশ্নটি হয়তো 'Neither of them gets the office.' হওয়া উচিত ছিল। তবে, অনেক সময় কথোপকথনে বা অনানুষ্ঠানিক লিখনে 'Neither of them get' ব্যবহৃত হয়, যদিও তা ব্যাকরণগতভাবে strict নয়। এক্ষেত্রে, যদি দুটি বিকল্পের মধ্যে কেউই কাজটা না করে, তাহলে 'Neither of' ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 11,
+          question: "She insisted on _ leaving the house.",
+          options: {
+            a: "he",
+            b: "him",
+            c: "himself",
+            d: "his",
+          },
+          correct: "d",
+          explanation:
+            "<p>যখন একটি Gerund (ক্রিয়া বিশেষ্য) (যেমন: 'leaving') কোনো Preposition (পদান্বয়ী অব্যয়) (যেমন: 'on') এর পরে বসে এবং Gerund এর আগে একটি possessive form (সম্বন্ধ পদ) এর প্রয়োজন হয়, তখন Possessive Pronoun (সম্পর্কবাচক সর্বনাম) বা Possessive Adjective (সম্পর্কবাচক বিশেষণ) ব্যবহৃত হয়। এই ক্ষেত্রে 'leaving' একটি Gerund এবং এর Subject হলো 'he'। Gerund এর Subject হিসেবে Possessive Pronoun বা Possessive Adjective ব্যবহৃত হয়।</p><br><p>অপশন (A) 'he' (হি) একটি Subjective Personal Pronoun।</p><br><p>অপশন (B) 'him' (হিম) একটি Objective Personal Pronoun।</p><br><p>অপশন (C) 'himself' (হিমসেলফ) একটি Reflexive Pronoun।</p><br><p>অপশন (D) 'his' (হিজ) একটি Possessive Pronoun বা Possessive Adjective, যা 'leaving' Gerund এর Subject কে নির্দেশ করছে। 'She insisted on his leaving the house' মানে 'সে তার বাড়ি ছেড়ে যাওয়ার উপর জোর দিয়েছিল'।</p>",
+        },
+        {
+          id: 12,
+          question: "Which gender is the word 'orphan'?",
+          options: {
+            a: "neuter",
+            b: "feminine",
+            c: "common",
+            d: "masculine",
+          },
+          correct: "c",
+          explanation:
+            "<p>Gender (লিঙ্গ) হলো noun বা pronoun এর একটি শ্রেণীবিভাগ যা masculine (পুংলিঙ্গ), feminine (স্ত্রীলিঙ্গ), neuter (ক্লীবলিঙ্গ) বা common (উভয়লিঙ্গ) হতে পারে।</p><br><p>অপশন (A) Neuter gender (ক্লীবলিঙ্গ): যেসব noun প্রাণহীন বস্তু বোঝায় এবং যাদের কোনো লিঙ্গ নেই, যেমন: table, chair, book।</p><br><p>অপশন (B) Feminine gender (স্ত্রীলিঙ্গ): যেসব noun নারী প্রাণী বোঝায়, যেমন: girl, woman, sister।</p><br><p>অপশন (C) Common gender (উভয়লিঙ্গ): যেসব noun পুরুষ ও স্ত্রী উভয়কেই বোঝাতে পারে, তাদের Common Gender বলে। 'Orphan' (অরফান) মানে 'এতিম' বা 'অনাথ', যা ছেলে বা মেয়ে উভয়কেই বোঝাতে পারে। তাই 'orphan' হলো Common Gender এর উদাহরণ। অন্যান্য উদাহরণ: student, teacher, doctor, child, parent।</p><br><p>অপশন (D) Masculine gender (পুংলিঙ্গ): যেসব noun পুরুষ প্রাণী বোঝায়, যেমন: boy, man, brother।</p>",
+        },
+        {
+          id: 13,
+          question: "\"Who's that?\" in this sentence 'that' is a/an-",
+          options: {
+            a: "Pronoun",
+            b: "Conjunction",
+            c: "Adjective",
+            d: "Adverb",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বাক্যটিতে 'that' (দ্যাট) একটি Demonstrative Pronoun (নির্দেশক সর্বনাম) হিসেবে ব্যবহৃত হয়েছে। এটি কোনো ব্যক্তি বা বস্তুকে নির্দেশ করছে, যা সম্ভবত প্রশ্নকর্তার দৃষ্টিগোচর হয়েছে।</p><br><p>অপশন (A) Pronoun (সর্বনাম): 'that' এখানে একটি Pronoun হিসেবে কাজ করছে কারণ এটি একটি নির্দিষ্ট ব্যক্তি বা বস্তুর (যার পরিচয় জানতে চাওয়া হচ্ছে) পরিবর্তে বসেছে।</p><br><p>অপশন (B) Conjunction (যোজক): Conjunction দুটি বাক্য, বাক্যাংশ বা শব্দকে সংযুক্ত করে। 'that' একটি Conjunction হিসেবেও ব্যবহৃত হতে পারে (যেমন: I know that he is honest), কিন্তু এই বাক্যে তা নয়।</p><br><p>অপশন (C) Adjective (বিশেষণ): Adjective noun বা pronoun কেModify (বিশেষায়িত) করে। 'that' একটি Adjective হিসেবে ব্যবহৃত হতে পারে যখন এটি একটি noun এর আগে বসে (যেমন: That book is mine), কিন্তু এখানে এটি স্বাধীনভাবে ব্যবহৃত হয়েছে।</p><br><p>অপশন (D) Adverb (ক্রিয়া বিশেষণ): Adverb verb, adjective বা অন্য adverb কে Modify করে। 'that' একটি Adverb হিসেবে ব্যবহৃত হতে পারে (যেমন: I am that much happy), কিন্তু এই বাক্যে তা নয়।</p>",
+        },
+        {
+          id: 14,
+          question:
+            "Which one of the following is an example of an indefinite pronoun?",
+          options: {
+            a: "such",
+            b: "either",
+            c: "this",
+            d: "any",
+          },
+          correct: "d",
+          explanation:
+            "<p>Indefinite Pronoun (অনির্দিষ্ট সর্বনাম) হলো সেই pronoun যা অনির্দিষ্ট ব্যক্তি, বস্তু বা পরিমাণকে নির্দেশ করে। এটি কোনো নির্দিষ্ট নাম বা বস্তুর পরিবর্তে বসে না।</p><br><p>অপশন (A) 'such' (সাচ) একটি Indefinite Pronoun হিসেবে ব্যবহৃত হতে পারে (যেমন: Such is life) অথবা Determiner হিসেবে।</p><br><p>অপশন (B) 'either' (আইদার) একটি Distributive Pronoun (বিভাজক সর্বনাম) বা Conjunction।</p><br><p>অপশন (C) 'this' (দিস) একটি Demonstrative Pronoun (নির্দেশক সর্বনাম) বা Determiner।</p><br><p>অপশন (D) 'any' (এনি) একটি Indefinite Pronoun। এটি অনির্দিষ্ট পরিমাণ বা ব্যক্তিকে বোঝাতে ব্যবহৃত হয়। যেমন: 'Do you have any questions?' (তোমার কি কোনো প্রশ্ন আছে?) বা 'Anyone can do it.' (যে কেউ এটি করতে পারে)। 'Any' যখন একা বসে, তখন এটি Indefinite Pronoun হিসেবে কাজ করে।</p>",
+        },
+        {
+          id: 15,
+          question: 'What kind of pronoun are "who, what, and which"?',
+          options: {
+            a: "demonstrative",
+            b: "personal",
+            c: "relative",
+            d: "reflexive",
+          },
+          correct: "c",
+          explanation:
+            "<p>'Who', 'what', এবং 'which' হলো Relative Pronoun (আপেক্ষিক সর্বনাম) এবং Interrogative Pronoun (প্রশ্নবোধক সর্বনাম) উভয়ই। যেহেতু অপশনে 'Relative' আছে এবং প্রশ্নটি সাধারণ অর্থে কোন প্রকার Pronoun তা জানতে চাইছে, তাই 'Relative' একটি সঠিক উত্তর। যখন এই শব্দগুলো দুটি বাক্য বা বাক্যাংশকে যুক্ত করে এবং পূর্ববর্তী noun বা pronoun কে নির্দেশ করে, তখন Relative Pronoun হয়। যখন এই শব্দগুলো প্রশ্ন জিজ্ঞাসা করতে ব্যবহৃত হয়, তখন Interrogative Pronoun হয়।</p><br><p>অপশন (A) Demonstrative (নির্দেশক সর্বনাম): This, that, these, those।</p><br><p>অপশন (B) Personal (ব্যক্তিবাচক সর্বনাম): I, me, you, he, him, she, her, it, we, us, they, them।</p><br><p>অপশন (C) Relative (আপেক্ষিক সর্বনাম): Who, whom, whose, which, that। এই শব্দগুলো বাক্যে ব্যবহৃত হয়ে noun বা pronoun এর সাথে সম্পর্ক স্থাপন করে। যেমন: 'The man who came here is my uncle.' (যে লোকটি এখানে এসেছিল সে আমার চাচা)।</p><br><p>অপশন (D) Reflexive (আত্মবাচক সর্বনাম): Myself, yourself, himself, herself, itself, ourselves, yourselves, themselves।</p>",
+        },
+        {
+          id: 16,
+          question: "Which one is the correct sentence given below?",
+          options: {
+            a: "You, he and I went there.",
+            b: "He, you and I went there.",
+            c: "I, you and he went there.",
+            d: "You, I and he went there.",
+          },
+          correct: "a",
+          explanation:
+            "<p>ইংরেজিতে যখন একাধিক Personal Pronoun (ব্যক্তিবাচক সর্বনাম) একটি বাক্যের Subject (কর্তা) হিসেবে ব্যবহৃত হয়, তখন তাদের একটি নির্দিষ্ট ক্রম মেনে চলতে হয়, যা '231 rule' নামে পরিচিত। এর অর্থ হলো: প্রথমে Second Person (দ্বিতীয় পুরুষ) (you), তারপর Third Person (তৃতীয় পুরুষ) (he/she/it/they), এবং সবশেষে First Person (প্রথম পুরুষ) (I/we)। তবে, যদি কোনো নেতিবাচক বা দোষ স্বীকারের বিষয় থাকে, তখন '123 rule' অনুসরণ করা হয় (I, you, he)। এই বাক্যটিতে কোনো নেতিবাচক বিষয় নেই, তাই '231 rule' প্রযোজ্য।</p><br><p>অপশন (A) 'You, he and I went there.' এই ক্রমটি '231 rule' (দ্বিতীয় পুরুষ, তৃতীয় পুরুষ, প্রথম পুরুষ) অনুযায়ী সঠিক।</p><br><p>অপশন (B) 'He, you and I went there.' এই ক্রমটি ভুল।</p><br><p>অপশন (C) 'I, you and he went there.' এই ক্রমটি ভুল।</p><br><p>অপশন (D) 'You, I and he went there.' এই ক্রমটি ভুল, কারণ First Person (I) Third Person (he) এর আগে বসেছে।</p>",
+        },
+        {
+          id: 17,
+          question: "Choose the correct sentence:",
+          options: {
+            a: "One should obey their parents",
+            b: "One should obey one's parents",
+            c: "One should obey one parents",
+            d: "One should obey the parents",
+          },
+          correct: "b",
+          explanation:
+            "<p>যখন একটি বাক্যের Subject হিসেবে 'one' (একজন) ব্যবহৃত হয়, তখন এর possessive form (সম্বন্ধ পদ) হিসেবে 'one's' (ওয়ানস) ব্যবহার করা হয়। এটি একটি সাধারণ নিয়ম যা ইংরেজি ব্যাকরণে অনুসরণ করা হয়।</p><br><p>অপশন (A) 'One should obey their parents': এখানে 'their' (দেয়ার) একটি plural possessive pronoun, যা 'one' এর singular nature (একবচন প্রকৃতি) এর সাথে সামঞ্জস্যপূর্ণ নয়।</p><br><p>অপশন (B) 'One should obey one's parents': এই বাক্যটি সঠিক, কারণ 'one' এর possessive form 'one's' ব্যবহার করা হয়েছে।</p><br><p>অপশন (C) 'One should obey one parents': এখানে 'one' possessive form এ নেই, যা ব্যাকরণগতভাবে ভুল।</p><br><p>অপশন (D) 'One should obey the parents': যদিও এটি ব্যাকরণগতভাবে ভুল নয়, তবে 'one' এর সাথে 'one's' ব্যবহার করা হলে বাক্যটি আরও সুনির্দিষ্ট হয় এবং 'one' এর প্রতি কর্তব্য নির্দেশ করে। 'the parents' বলতে নির্দিষ্ট কোনো বাবা-মাকে বোঝায়, যা সাধারণ অর্থে 'one' এর কর্তব্যের সাথে মেলে না।</p>",
+        },
+        {
+          id: 18,
+          question: "Which one of the following is a demonstrative pronoun?",
+          options: {
+            a: "yourself",
+            b: "who",
+            c: "he",
+            d: "those",
+          },
+          correct: "d",
+          explanation:
+            "<p>Demonstrative Pronoun (নির্দেশক সর্বনাম) হলো সেই pronoun যা নির্দিষ্ট ব্যক্তি, বস্তু বা ধারণা নির্দেশ করে। এই pronoun গুলো সাধারণত noun এর পরিবর্তে বসে এবং কোনো কিছুকে নির্দেশ করতে ব্যবহৃত হয়।</p><br><p>অপশন (A) 'yourself' (ইওরসেলফ) একটি Reflexive Pronoun (আত্মবাচক সর্বনাম)।</p><br><p>অপশন (B) 'who' (হু) একটি Relative Pronoun (আপেক্ষিক সর্বনাম) বা Interrogative Pronoun (প্রশ্নবোধক সর্বনাম)।</p><br><p>অপশন (C) 'he' (হি) একটি Personal Pronoun (ব্যক্তিবাচক সর্বনাম)।</p><br><p>অপশন (D) 'those' (দোজ) একটি Demonstrative Pronoun। এটি দূরবর্তী একাধিক বস্তু বা ব্যক্তিকে নির্দেশ করে। অন্যান্য Demonstrative Pronoun হলো: this, that, these।</p>",
+        },
+        {
+          id: 19,
+          question:
+            '"I wish we did not have to use car for the trip to your reunion" Fill up the gap in the above sentence with the correct pronoun.',
+          options: {
+            a: "everybody",
+            b: "everyone",
+            c: "anybody",
+            d: "someone",
+          },
+          correct: "b",
+          explanation:
+            "<p>প্রশ্নটি অসম্পূর্ণ। সম্ভবত, এটি এমন ছিল: \"I wish we did not have to use car for the trip to your reunion, but <strong>everyone</strong> wanted to go.\"।</p><br><p>এই বাক্যে 'everybody' বা 'everyone' উভয়ই উপযুক্ত হতে পারে, তবে যদি একটি 'gap' থাকে যা পূরণ করতে হবে এবং অপশনগুলো থেকে বেছে নিতে হয়, তাহলে সাধারণত 'everyone' বা 'everybody' ব্যবহার করা যেতে পারে যখন একটি সর্বজনীন উল্লেখ করা হয়।</p><br><p>যদি বাক্যটি এমন হতো: 'I wish we did not have to use car for the trip to your reunion, but <strong>everyone</strong> insisted on going.' তাহলে 'everyone' সঠিক হতো।</p><br><p>অপশন (A) 'everybody' (এভরিবডি): 'everyone' এর সমার্থক, তবে 'everyone' কিছুটা বেশি Formal এবং লেখার ক্ষেত্রে বেশি প্রচলিত।</p><br><p>অপশন (B) 'everyone' (এভরিওয়ান): এটি একটি Indefinite Pronoun (অনির্দিষ্ট সর্বনাম) যা 'প্রত্যেক ব্যক্তি' বোঝাতে ব্যবহৃত হয়। এটি 'everybody' এর সমার্থক।</p><br><p>অপশন (C) 'anybody' (এনিবডি): 'যে কেউ' বোঝাতে ব্যবহৃত হয়, সাধারণত প্রশ্ন বা নেতিবাচক বাক্যে।</p><br><p>অপশন (D) 'someone' (সামওয়ান): 'কোনো একজন' বোঝাতে ব্যবহৃত হয়।</p><p>যেহেতু প্রশ্নের বাক্যটি অসম্পূর্ণ, এবং কোনো 'gap' দেওয়া নেই, তাই এই প্রশ্নের ব্যাখ্যা দেওয়া কঠিন। তবে, যদি 'everyone' বা 'everybody' এর মধ্যে একটি বেছে নিতে হয় যখন একটি সাধারণ আকাঙ্ক্ষা বা মন্তব্য বোঝানো হয়, তাহলে 'everyone' প্রায়শই ব্যবহার করা হয়। সম্ভবত প্রশ্নটি এভাবে ছিলো: 'I wish we did not have to use car for the trip to your reunion, but ____ wanted to go.' সেক্ষেত্রে 'everyone' বা 'everybody' হতে পারত। তবে যেহেতু এখানে একটি উত্তর দেওয়া আছে এবং তা অপশন 'b' তাই ধরে নেওয়া যায় যে 'everyone' সঠিক।</p>",
+        },
+        {
+          id: 20,
+          question:
+            "Which of the following is a correct example of demonstrative pronoun?",
+          options: {
+            a: "This is my coat.",
+            b: "These shirts have been ironed properly.",
+            c: "This dress belongs to me.",
+            d: "Did you see that crazy driver?",
+          },
+          correct: "a",
+          explanation:
+            "<p>Demonstrative Pronoun (নির্দেশক সর্বনাম) হলো সেই pronoun যা নির্দিষ্ট ব্যক্তি, বস্তু বা ধারণা নির্দেশ করে এবং সাধারণত noun এর পরিবর্তে বসে। অন্যদিকে, Demonstrative Adjective (নির্দেশক বিশেষণ) হলো সেই শব্দ যা noun এর আগে বসে সেই noun কে নির্দেশ করে।</p><br><p>অপশন (A) 'This is my coat.': এখানে 'This' (দিস) একটি Demonstrative Pronoun, কারণ এটি একটি নির্দিষ্ট বস্তুকে নির্দেশ করছে এবং noun (coat) এর পরিবর্তে ব্যবহৃত হয়েছে। এটি একটি Linking Verb (সংযোগকারী ক্রিয়া) 'is' এর Subject হিসেবে কাজ করছে।</p><br><p>অপশন (B) 'These shirts have been ironed properly.': এখানে 'These' (দিজ) একটি Demonstrative Adjective, কারণ এটি noun 'shirts' কে Modify করছে।</p><br><p>অপশন (C) 'This dress belongs to me.': এখানে 'This' একটি Demonstrative Adjective, কারণ এটি noun 'dress' কে Modify করছে।</p><br><p>অপশন (D) 'Did you see that crazy driver?': এখানে 'that' (দ্যাট) একটি Demonstrative Adjective, কারণ এটি noun 'driver' কে Modify করছে।</p>",
+        },
+        {
+          id: 21,
+          question: "Choose the sentence without a personal pronoun-",
+          options: {
+            a: "We have to leave, so give our sears to them",
+            b: "She told us that we were late for the party",
+            c: "I said that she told him to leave us alone",
+            d: "There was a river in the distance",
+          },
+          correct: "d",
+          explanation:
+            "<p>Personal Pronoun (ব্যক্তিবাচক সর্বনাম) হলো সেই pronoun যা ব্যক্তি, বস্তু বা প্রাণীর পরিবর্তে বসে। যেমন: I, me, you, he, him, she, her, it, we, us, they, them।</p><br><p>অপশন (A) 'We have to leave, so give our sears to them': এখানে 'We' (উই), 'our' (আওয়ার) এবং 'them' (দেম) Personal Pronoun।</p><br><p>অপশন (B) 'She told us that we were late for the party': এখানে 'She' (শি), 'us' (আস) এবং 'we' Personal Pronoun।</p><br><p>অপশন (C) 'I said that she told him to leave us alone': এখানে 'I' (আই), 'she' (শি), 'him' (হিম) এবং 'us' Personal Pronoun।</p><br><p>অপশন (D) 'There was a river in the distance': এই বাক্যে কোনো Personal Pronoun নেই। 'There' এখানে একটি Expletive (ভূমিকা সৃষ্টিকারী শব্দ) হিসেবে ব্যবহৃত হয়েছে, যা Subject এর জায়গা দখল করে এবং এটি Personal Pronoun নয়।</p>",
+        },
+        {
+          id: 22,
+          question:
+            "Which one the correct word for the blank? Farid and I have known ____ for quite a long time.",
+          options: {
+            a: "both",
+            b: "us",
+            c: "ourselves",
+            d: "each other",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে 'Farid and I' (ফরিদ এবং আমি) একে অপরের সাথে সম্পর্ক স্থাপন করছে। যখন দুটি ব্যক্তি একে অপরের সাথে কোনো ক্রিয়া সম্পন্ন করে, তখন Reciprocal Pronoun (পারস্পরিক সর্বনাম) ব্যবহৃত হয়।</p><br><p>অপশন (A) 'both' (বোথ) একটি Determiner বা Pronoun, যা 'উভয়' বোঝাতে ব্যবহৃত হয়, কিন্তু এখানে Reciprocal সম্পর্ক বোঝাতে ব্যবহৃত হয় না।</p><br><p>অপশন (B) 'us' (আস) একটি Objective Personal Pronoun, যা Subject (Farid and I) এর সাথে Reciprocal সম্পর্ক বোঝায় না।</p><br><p>অপশন (C) 'ourselves' (আওয়ারসেলফস্) একটি Reflexive Pronoun, যা Subject নিজেই Object হলে ব্যবহৃত হয় (যেমন: We helped ourselves), কিন্তু এখানে দুজন ব্যক্তির পারস্পরিক ক্রিয়া বোঝাতে হবে।</p><br><p>অপশন (D) 'each other' (ইচ আদার) একটি Reciprocal Pronoun, যা 'একে অপরকে' বোঝাতে ব্যবহৃত হয় যখন দুজন ব্যক্তির মধ্যে কোনো পারস্পরিক ক্রিয়া ঘটে। এই বাক্যটিতে 'Farid and I have known each other' মানে 'ফরিদ এবং আমি একে অপরকে দীর্ঘদিন ধরে চিনি', যা সঠিক অর্থ প্রকাশ করে।</p>",
+        },
+        {
+          id: 23,
+          question: "Which one of the following sentences is correct?",
+          options: {
+            a: "I, she and you ate snacks.",
+            b: "She, I and you ate snacks.",
+            c: "You, I and she ate snacks.",
+            d: "You, she and I ate snacks.",
+          },
+          correct: "d",
+          explanation:
+            "<p>ইংরেজিতে যখন একাধিক Personal Pronoun (ব্যক্তিবাচক সর্বনাম) একটি বাক্যের Subject (কর্তা) হিসেবে ব্যবহৃত হয়, তখন তাদের একটি নির্দিষ্ট ক্রম মেনে চলতে হয়, যা '231 rule' নামে পরিচিত। এর অর্থ হলো: প্রথমে Second Person (দ্বিতীয় পুরুষ) (you), তারপর Third Person (তৃতীয় পুরুষ) (he/she/it/they), এবং সবশেষে First Person (প্রথম পুরুষ) (I/we)। তবে, যদি কোনো নেতিবাচক বা দোষ স্বীকারের বিষয় থাকে, তখন '123 rule' অনুসরণ করা হয় (I, you, he)। এই বাক্যটিতে কোনো নেতিবাচক বিষয় নেই, তাই '231 rule' প্রযোজ্য।</p><br><p>অপশন (A) 'I, she and you ate snacks.' এই ক্রমটি ভুল।</p><br><p>অপশন (B) 'She, I and you ate snacks.' এই ক্রমটি ভুল।</p><br><p>অপশন (C) 'You, I and she ate snacks.' এই ক্রমটি ভুল, কারণ First Person (I) Third Person (she) এর আগে বসেছে।</p><br><p>অপশন (D) 'You, she and I ate snacks.' এই ক্রমটি '231 rule' (দ্বিতীয় পুরুষ, তৃতীয় পুরুষ, প্রথম পুরুষ) অনুযায়ী সঠিক।</p>",
+        },
+        {
+          id: 24,
+          question: "Whose book is that?",
+          options: {
+            a: "It's of Mita's",
+            b: "It's Mitas'",
+            c: "It's Mita's",
+            d: "It' Mita's",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রশ্নে 'Whose book is that?' মানে 'এটি কার বই?' এখানে মালিকানা বা অধিকার বোঝাতে হবে। Proper noun (বিশেষ্য) এর possessive form (সম্বন্ধ পদ) তৈরি করার জন্য apostrophe এবং 's' ('s) ব্যবহার করা হয়।</p><br><p>অপশন (A) 'It's of Mita's': এই গঠনটি অস্বাভাবিক এবং ভুল। 'It's' মানে 'it is'। 'of Mita's' একটি দ্বৈত মালিকানা প্রকাশ করছে যা অপ্রয়োজনীয়।</p><br><p>অপশন (B) 'It's Mitas'': 'Mitas'' সাধারণত তখনই ব্যবহৃত হয় যখন 'Mitas' একটি plural noun হয় এবং এর possessive form তৈরি করতে হয়, কিন্তু 'Mita' একটি singular name।</p><br><p>অপশন (C) 'It's Mita's': এটি সঠিক। 'It's' মানে 'It is' এবং 'Mita's' মানে 'মিতার' বা 'মিতার মালিকানাধীন'। এটি সম্পূর্ণ বাক্যটিকে সঠিকভাবে প্রকাশ করে।</p><br><p>অপশন (D) 'It' Mita's': এখানে 'It'' ব্যবহার করা হয়েছে, যা ব্যাকরণগতভাবে ভুল। 'It'' এর কোনো অর্থ নেই।</p>",
+        },
+        {
+          id: 25,
+          question: "He can sing better than ____ in his family.",
+          options: {
+            a: "ourselves",
+            b: "our",
+            c: "us",
+            d: "we",
+          },
+          correct: "c",
+          explanation:
+            "<p>তুলনামূলক বাক্যে (Comparative Sentence) যখন দুটি বস্তুর মধ্যে তুলনা করা হয়, তখন 'than' এর পরে Object Form (কর্ম পদ) ব্যবহার করা হয় যদি Subject এর সাথে তুলনা করা না হয়। এখানে 'He' (Subject) এর সাথে তুলনা করা হচ্ছে, কিন্তু 'family' এর মধ্যে অন্যান্য সদস্যদের সাথে তার গাওয়ার ক্ষমতার তুলনা বোঝাতে হবে। তাই, 'than' এর পরে Objective Case (কর্ম কারক) এর Pronoun ব্যবহার করা উচিত।</p><br><p>অপশন (A) 'ourselves' (আওয়ারসেলফস্) একটি Reflexive Pronoun।</p><br><p>অপশন (B) 'our' (আওয়ার) একটি Possessive Adjective।</p><br><p>অপশন (C) 'us' (আস) একটি Objective Personal Pronoun। 'He can sing better than us' মানে 'সে আমাদের চেয়ে ভালো গাইতে পারে'। এই বাক্যটি সঠিক এবং প্রচলিত।</p><br><p>অপশন (D) 'we' (উই) একটি Subjective Personal Pronoun। যদি বাক্যটি এমন হতো 'He can sing better than we can', তাহলে 'we' ব্যবহৃত হতো, কারণ তখন 'we' একটি Subject হিসেবে গণ্য হতো। কিন্তু শুধু 'than' এর পরে সাধারণত Objective form ব্যবহৃত হয় যখন Subject এর সাথে তুলনা না করে Object এর সাথে তুলনা করা হয়। এখানে 'He' এর সাথে পরিবারের অন্য সদস্যদের তুলনা করা হচ্ছে যারা গানের Object।</p>",
+        },
+        {
+          id: 26,
+          question: "____ among you are from Class XII?",
+          options: {
+            a: "Which",
+            b: "Who",
+            c: "Whom",
+            d: "Whose",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যটিতে একটি প্রশ্ন জিজ্ঞাসা করা হচ্ছে যে 'তোমাদের মধ্যে কারা ক্লাস XII এর ছাত্র?'। এক্ষেত্রে প্রশ্ন করতে Subject (কর্তা) কে জানতে চাওয়া হচ্ছে। তাই Interrogative Pronoun (প্রশ্নবোধক সর্বনাম) 'who' ব্যবহার করা হবে।</p><br><p>অপশন (A) 'Which' (উইচ) সাধারণত সীমিত সংখ্যক পছন্দের মধ্যে থেকে নির্বাচন করার জন্য ব্যবহৃত হয় অথবা বস্তু বোঝাতে ব্যবহৃত হয়। যেমন: 'Which color do you prefer?'।</p><br><p>অপশন (B) 'Who' (হু) একটি Interrogative Pronoun, যা Subject (কর্তা) কে জিজ্ঞাসা করতে ব্যবহৃত হয় যখন ব্যক্তি সম্পর্কে জানতে চাওয়া হয়। 'Who among you' মানে 'তোমাদের মধ্যে কারা'।</p><br><p>অপশন (C) 'Whom' (হুম) একটি Interrogative Pronoun, যা Object (কর্ম) কে জিজ্ঞাসা করতে ব্যবহৃত হয়। যেমন: 'Whom did you meet?'।</p><br><p>অপশন (D) 'Whose' (হুজ) একটি Interrogative Pronoun, যা মালিকানা জিজ্ঞাসা করতে ব্যবহৃত হয়। যেমন: 'Whose book is this?'।</p>",
+        },
+        {
+          id: 27,
+          question:
+            "The first half of the game belonged to us, the second half to ____",
+          options: {
+            a: "them",
+            b: "they",
+            c: "their",
+            d: "those",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বাক্যে 'to' একটি Preposition (পদান্বয়ী অব্যয়)। Preposition এর পরে সবসময় Object Form (কর্ম পদ) এর Pronoun বসে।</p><br><p>অপশন (A) 'them' (দেম) একটি Objective Personal Pronoun, যা 'they' এর Objective Form। 'to them' মানে 'তাদের কাছে'।</p><br><p>অপশন (B) 'they' (দে) একটি Subjective Personal Pronoun।</p><br><p>অপশন (C) 'their' (দেয়ার) একটি Possessive Adjective।</p><br><p>অপশন (D) 'those' (দোজ) একটি Demonstrative Pronoun বা Determiner।</p><br><p>সুতরাং, 'the second half to them' মানে 'দ্বিতীয়ার্ধ তাদেরই ছিল', যা বাক্যটিকে সঠিক এবং অর্থপূর্ণ করে তোলে।</p>",
+        },
+        {
+          id: 28,
+          question:
+            "Pinocchio is hungry and looks for an egg to cook an omelet; but, to his surprise, the omelet flies out of the window.",
+          options: {
+            a: "oneself",
+            b: "itself",
+            c: "himself",
+            d: "which",
+          },
+          correct: "d",
+          explanation:
+            "<p>প্রশ্নটি অসম্পূর্ণ। সম্ভবত, এটি একটি Relative Pronoun এর ব্যবহার সংক্রান্ত প্রশ্ন ছিল, যেখানে একটি Relative Pronoun এর মাধ্যমে দুটি বাক্যকে সংযুক্ত করতে হবে। যদি প্রশ্নটি এমন হতো: \"Pinocchio is hungry and looks for an egg to cook an omelet; but, to his surprise, the omelet, <strong>which</strong> he was about to cook, flies out of the window.\"</p><br><p>যদি প্রশ্নটি এমন হয় যে একটি Relative Pronoun বসাতে হবে যা 'omelet' কে নির্দেশ করবে এবং একটি নতুন clause শুরু করবে, তাহলে:</p><br><p>অপশন (A) 'oneself' (ওয়ানসেলফ) একটি Reflexive Pronoun, যা 'one' এর জন্য ব্যবহৃত হয়।</p><br><p>অপশন (B) 'itself' (ইটসেলফ) একটি Reflexive Pronoun, যা 'it' এর জন্য ব্যবহৃত হয়।</p><br><p>অপশন (C) 'himself' (হিমসেলফ) একটি Reflexive Pronoun, যা 'he' এর জন্য ব্যবহৃত হয়।</p><br><p>অপশন (D) 'which' (উইচ) একটি Relative Pronoun, যা বস্তু বা প্রাণীর জন্য ব্যবহৃত হয় এবং বাক্যকে যুক্ত করে। যদি বাক্যটি এমন হতো: 'the omelet, <strong>which</strong> he was about to cook, flies out of the window', তাহলে 'which' সঠিক হতো।</p><br><p>তবে, যেহেতু প্রদত্ত প্রশ্নটি অসম্পূর্ণ এবং কোনো blank space নেই, এবং একটি উত্তর দেওয়া আছে, তাই অনুমান করা যায় যে প্রশ্নে একটি Relative Pronoun এর ব্যবহার জানতে চাওয়া হয়েছে যা 'omelet' এর পরে বসবে। এই ধরণের বাক্যে, 'which' সাধারণত non-defining relative clause (অনির্ধারক আপেক্ষিক বাক্যাংশ) এ ব্যবহৃত হয়, যা অতিরিক্ত তথ্য প্রদান করে।</p>",
+        },
+        {
+          id: 29,
+          question:
+            "Leap years, ____ have 366 days, contain an extra day in February.",
+          options: {
+            a: "that",
+            b: "when",
+            c: "where",
+            d: "which",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে একটি Relative Pronoun (আপেক্ষিক সর্বনাম) এর প্রয়োজন, যা 'Leap years' (অধিবর্ষ) কে নির্দেশ করবে এবং এর সম্পর্কে অতিরিক্ত তথ্য দেবে। যেহেতু 'Leap years' একটি বস্তু বা ধারণা এবং এটি একটি non-restrictive clause (সীমাবদ্ধতাহীন বাক্যাংশ) (কমা দ্বারা চিহ্নিত), তাই 'which' ব্যবহার করা সবচেয়ে উপযুক্ত।</p><br><p>অপশন (A) 'that' (দ্যাট) একটি Relative Pronoun, কিন্তু এটি সাধারণত restrictive clause (সীমাবদ্ধ বাক্যাংশ) এ ব্যবহৃত হয় এবং non-restrictive clause এ কমার পরে ব্যবহৃত হয় না।</p><br><p>অপশন (B) 'when' (হোন) একটি Relative Adverb (আপেক্ষিক ক্রিয়া বিশেষণ) যা সময় বোঝাতে ব্যবহৃত হয়।</p><br><p>অপশন (C) 'where' (হোয়্যার) একটি Relative Adverb যা স্থান বোঝাতে ব্যবহৃত হয়।</p><br><p>অপশন (D) 'which' (উইচ) একটি Relative Pronoun, যা বস্তু বা ধারণা বোঝাতে ব্যবহৃত হয় এবং non-restrictive clause (কমা সহ) এ অত্যন্ত প্রচলিত। 'Leap years, which have 366 days' মানে 'অধিবর্ষ, যেগুলোর ৩৬৬ দিন থাকে'।</p>",
+        },
+        {
+          id: 30,
+          question: "Nazrul, ____ is our national poet, was also a soldier.",
+          options: {
+            a: "whom",
+            b: "who",
+            c: "what",
+            d: "which",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যটিতে একটি Relative Pronoun (আপেক্ষিক সর্বনাম) এর প্রয়োজন, যা 'Nazrul' (নজরুল) কে নির্দেশ করবে এবং এর সম্পর্কে অতিরিক্ত তথ্য দেবে। যেহেতু 'Nazrul' একজন ব্যক্তি এবং এখানে Relative clause (আপেক্ষিক বাক্যাংশ) এর Subject (কর্তা) হিসেবে কাজ করছে, তাই 'who' ব্যবহার করা সঠিক।</p><br><p>অপশন (A) 'whom' (হুম) একটি Relative Pronoun, যা Object (কর্ম) হিসেবে ব্যবহৃত হয়। যেমন: 'The man whom I met was a teacher.'।</p><br><p>অপশন (B) 'who' (হু) একটি Relative Pronoun, যা Subject (কর্তা) হিসেবে ব্যক্তি বোঝাতে ব্যবহৃত হয়। 'Nazrul, who is our national poet' মানে 'নজরুল, যিনি আমাদের জাতীয় কবি'।</p><br><p>অপশন (C) 'what' (হোয়াট) একটি Relative Pronoun, যা কোনো বস্তুকে বোঝাতে ব্যবহৃত হয় এবং সাধারণত এর কোনো antecedent (পূর্ববর্তী পদ) থাকে না।</p><br><p>অপশন (D) 'which' (উইচ) একটি Relative Pronoun, যা বস্তু বা প্রাণীর জন্য ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 31,
+          question: "Rahim is the only one of us ____ passed the examination.",
+          options: {
+            a: "who",
+            b: "which",
+            c: "whom",
+            d: "whose",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বাক্যটিতে একটি Relative Pronoun (আপেক্ষিক সর্বনাম) এর প্রয়োজন, যা 'Rahim' কে নির্দেশ করবে এবং 'passed the examination' ক্রিয়ার Subject (কর্তা) হিসেবে কাজ করবে। 'The only one of us' এমন বাক্য গঠনে, Relative Pronoun সাধারণত 'who' (ব্যক্তির জন্য) বা 'that' (ব্যক্তি বা বস্তুর জন্য) হতে পারে।</p><br><p>অপশন (A) 'who' (হু) একটি Relative Pronoun, যা ব্যক্তি বোঝাতে এবং Relative clause এর Subject হিসেবে ব্যবহৃত হয়। 'Rahim is the only one of us who passed the examination' মানে 'রাহিম আমাদের মধ্যে একমাত্র যে পরীক্ষায় পাস করেছে'।</p><br><p>অপশন (B) 'which' (উইচ) একটি Relative Pronoun, যা বস্তু বা প্রাণীর জন্য ব্যবহৃত হয়।</p><br><p>অপশন (C) 'whom' (হুম) একটি Relative Pronoun, যা Object (কর্ম) হিসেবে ব্যবহৃত হয়।</p><br><p>অপশন (D) 'whose' (হুজ) একটি Relative Pronoun, যা মালিকানা বোঝাতে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 32,
+          question:
+            "She was one of ____ people who are forever worried about money.",
+          options: {
+            a: "these",
+            b: "this",
+            c: "those",
+            d: "that",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বাক্যটিতে 'people' (পিপল) একটি plural noun (বহুবচন বিশেষ্য) এবং এর আগে একটি plural Demonstrative Pronoun (নির্দেশক সর্বনাম) বা Determiner এর প্রয়োজন। উপরন্তু, 'who are forever worried about money' অংশটি 'people' কে নির্দেশ করছে, যার অর্থ দূরবর্তী বা সাধারণ অর্থে 'সেই সব লোক' বোঝানো হচ্ছে।</p><br><p>অপশন (A) 'these' (দিজ) একটি plural Demonstrative, যা কাছাকাছি জিনিস বোঝাতে ব্যবহৃত হয়।</p><br><p>অপশন (B) 'this' (দিস) একটি singular Demonstrative, যা কাছাকাছি singular noun এর জন্য ব্যবহৃত হয়।</p><br><p>অপশন (C) 'those' (দোজ) একটি plural Demonstrative, যা দূরবর্তী বা সাধারণ অর্থে বহুবচন noun বোঝাতে ব্যবহৃত হয়। 'She was one of those people' মানে 'সে সেই সব লোকদের মধ্যে একজন'। এটি বাক্যের অর্থকে সম্পূর্ণ করে।</p><br><p>অপশন (D) 'that' (দ্যাট) একটি singular Demonstrative।</p>",
+        },
+        {
+          id: 33,
+          question: "Nila couldn't come to the party, ____ was a pity.",
+          options: {
+            a: "it",
+            b: "that",
+            c: "he",
+            d: "what",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে একটি Relative Pronoun এর প্রয়োজন যা পূর্ববর্তী পুরো ঘটনাটিকে (Nila couldn't come to the party) নির্দেশ করবে এবং এর ফলাফল বা মন্তব্য প্রকাশ করবে। এই ধরনের ক্ষেত্রে 'which' বা 'what' ব্যবহৃত হতে পারে। তবে 'what' প্রায়শই একটি স্বাধীন Relative Pronoun হিসেবে ব্যবহৃত হয়, যার কোনো সুস্পষ্ট antecedent থাকে না।</p><br><p>অপশন (A) 'it' (ইট) একটি Personal Pronoun, যা সাধারণত একটি নির্দিষ্ট noun কে নির্দেশ করে। পুরো বাক্য বা ঘটনাকে নির্দেশ করতে এর ব্যবহার সীমিত।</p><br><p>অপশন (B) 'that' (দ্যাট) একটি Relative Pronoun, কিন্তু 'that was a pity' এমন গঠন প্রায়শই 'which' এর পরিবর্তে ব্যবহৃত হয় যখন পূর্ববর্তী পুরো clause কে নির্দেশ করা হয়। তবে, 'which' এর ব্যবহার এক্ষেত্রে বেশি প্রচলিত।</p><br><p>অপশন (C) 'he' (হি) একটি Personal Pronoun, যা একজন পুরুষকে নির্দেশ করে, যা এখানে প্রযোজ্য নয়।</p><br><p>অপশন (D) 'what' (হোয়াট) একটি Relative Pronoun, যা কোনো জিনিস বা ঘটনাকে নির্দেশ করে এবং যার কোনো সুনির্দিষ্ট antecedent থাকে না। 'What was a pity' অর্থ 'যা দুঃখজনক ছিল'। এখানে 'what' দ্বারা 'Nila couldn't come to the party' এই পুরো ঘটনাটিকে বোঝানো হয়েছে। এটি একটি Common Relative Pronoun যা একটি ধারণা বা ঘটনাকে নির্দেশ করে।</p><br><p>তবে, এই ধরনের বাক্যে 'which' এর ব্যবহারও খুব প্রচলিত: 'Nila couldn't come to the party, which was a pity.' যেহেতু 'what' দেওয়া আছে, এবং এটি একটি Independent Relative Pronoun হিসেবে কাজ করতে পারে, তাই এটিকে সঠিক ধরা হয়েছে।</p>",
+        },
+        {
+          id: 34,
+          question: "He came to see ____ last night.",
+          options: {
+            a: "I",
+            b: "me",
+            c: "my",
+            d: "none",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যটিতে 'see' (দেখা) একটি Verb (ক্রিয়া) এবং এর পরে একটি Object (কর্ম) এর প্রয়োজন। Personal Pronoun এর Objective Form (কর্ম পদ) ব্যবহৃত হয় যখন এটি Verb বা Preposition এর Object হিসেবে কাজ করে।</p><br><p>অপশন (A) 'I' (আই) একটি Subjective Personal Pronoun।</p><br><p>অপশন (B) 'me' (মি) একটি Objective Personal Pronoun, যা 'I' এর Objective Form। 'He came to see me' মানে 'সে গত রাতে আমাকে দেখতে এসেছিল', যা ব্যাকরণগতভাবে সঠিক।</p><br><p>অপশন (C) 'my' (মাই) একটি Possessive Adjective।</p><br><p>অপশন (D) 'none' (নন) এখানে প্রযোজ্য নয়।</p>",
+        },
+        {
+          id: 35,
+          question:
+            "____ of the two girls has submitted the term paper to the instructor yet.",
+          options: {
+            a: "Neither",
+            b: "None",
+            c: "Either",
+            d: "Every",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বাক্যটিতে 'two girls' (দুটি মেয়ে) এর কথা উল্লেখ করা হয়েছে এবং 'has submitted' (জমা দিয়েছে) একটি singular verb (একবচন ক্রিয়া) ব্যবহৃত হয়েছে। যখন দুটি জিনিসের মধ্যে কোনোটিই নয় বোঝানো হয় এবং singular verb ব্যবহৃত হয়, তখন 'neither' (নাইদার) ব্যবহার করা হয়।</p><br><p>অপশন (A) 'Neither' (নাইদার) একটি Distributive Pronoun (বিভাজক সর্বনাম) বা Determiner। এটি 'দু'জনের কেউই নয়' বোঝাতে ব্যবহৃত হয় এবং এর সাথে singular verb ব্যবহৃত হয়। 'Neither of the two girls has submitted' মানে 'দুটি মেয়ের কেউই টার্ম পেপার জমা দেয়নি'।</p><br><p>অপশন (B) 'None' (নান) 'তিন বা ততোধিক' জিনিসের মধ্যে 'কেউ না' বোঝাতে ব্যবহৃত হয় এবং এর সাথে singular বা plural verb উভয়ই ব্যবহৃত হতে পারে। কিন্তু এখানে 'two' এর উল্লেখ থাকায় 'neither' বেশি উপযুক্ত।</p><br><p>অপশন (C) 'Either' (আইদার) 'দু'জনের মধ্যে যেকোনো একজন' বোঝাতে ব্যবহৃত হয়।</p><br><p>অপশন (D) 'Every' (এভরি) একটি Determiner যা 'প্রত্যেক' বোঝাতে ব্যবহৃত হয় এবং এর পরে singular noun বসে (যেমন: Every girl)। এটি সরাসরি Pronoun হিসেবে ব্যবহৃত হয় না।</p>",
+        },
+        {
+          id: 36,
+          question:
+            "The students of Bangladesh are more meritorious than ____ of the USA.",
+          options: {
+            a: "his own self",
+            b: "but himself, where",
+            c: "and him, when",
+            d: "those",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে বাংলাদেশের ছাত্রদের সাথে মার্কিন যুক্তরাষ্ট্রের ছাত্রদের তুলনা করা হচ্ছে। তুলনা করার সময়, একই ধরনের জিনিসকে নির্দেশ করতে Demonstrative Pronoun (নির্দেশক সর্বনাম) ব্যবহার করা হয়। এখানে 'students' একটি plural noun, তাই এর পরিবর্তে plural Demonstrative Pronoun ব্যবহার করা উচিত।</p><br><p>অপশন (A) 'his own self' (হিজ ওন সেলফ) একটি Reflexive Pronoun বা এর মতো গঠন, যা এখানে প্রযোজ্য নয়।</p><br><p>অপশন (B) 'but himself, where' (বাট হিমসেলফ, হোয়্যার) ব্যাকরণগতভাবে সম্পূর্ণ ভুল এবং অপ্রাসঙ্গিক।</p><br><p>অপশন (C) 'and him, when' (অ্যান্ড হিম, হোয়েন) ব্যাকরণগতভাবে সম্পূর্ণ ভুল এবং অপ্রাসঙ্গিক।</p><br><p>অপশন (D) 'those' (দোজ) একটি plural Demonstrative Pronoun, যা 'students' কে নির্দেশ করছে। 'than those of the USA' মানে 'মার্কিন যুক্তরাষ্ট্রের ছাত্রদের চেয়ে'। এটি বাক্যটিকে সঠিক এবং অর্থপূর্ণ করে তোলে। এই ধরনের তুলনামূলক বাক্যে 'that' (singular এর জন্য) বা 'those' (plural এর জন্য) ব্যবহার করা হয়।</p>",
+        },
+        {
+          id: 37,
+          question: "There is really no difference between you and ____",
+          options: {
+            a: "I",
+            b: "we",
+            c: "them",
+            d: "me",
+          },
+          correct: "d",
+          explanation:
+            "<p>এই বাক্যটিতে 'between' (বিটুইন) একটি Preposition (পদান্বয়ী অব্যয়)। Preposition এর পরে সবসময় Object Form (কর্ম পদ) এর Pronoun বসে।</p><br><p>অপশন (A) 'I' (আই) একটি Subjective Personal Pronoun।</p><br><p>অপশন (B) 'we' (উই) একটি Subjective Personal Pronoun।</p><br><p>অপশন (C) 'them' (দেম) একটি Objective Personal Pronoun। এটি সঠিক হতে পারত যদি 'you' এর সাথে 'them' এর তুলনা করা হতো। কিন্তু এখানে 'you' (দ্বিতীয় পুরুষ) এর সাথে 'me' (প্রথম পুরুষ) এর তুলনা বেশি যুক্তিযুক্ত।</p><br><p>অপশন (D) 'me' (মি) একটি Objective Personal Pronoun, যা 'I' এর Objective Form। 'There is really no difference between you and me' মানে 'তোমার আর আমার মধ্যে আসলে কোনো পার্থক্য নেই', যা ব্যাকরণগতভাবে সঠিক এবং প্রচলিত।</p>",
+        },
+        {
+          id: 38,
+          question:
+            'The author of several books. Here "several" is an example of-',
+          options: {
+            a: "Indefinite Pronoun",
+            b: "Distributive Pronoun",
+            c: "Personal Pronoun",
+            d: "Relative Pronoun",
+          },
+          correct: "a",
+          explanation:
+            "<p>এখানে 'several' (সেভারাল) একটি Determiner (নির্ধারক) হিসেবে ব্যবহৃত হয়েছে, যা 'books' (বই) noun এর পরিমাণ নির্দেশ করছে, কিন্তু নির্দিষ্টভাবে কতগুলো বই তা বলা হয়নি। যখন 'several' কোনো noun কে Modify করে, তখন তা Adjective হিসেবে কাজ করে। তবে, 'several' নিজেও একটি Indefinite Pronoun হিসেবে ব্যবহৃত হতে পারে যখন এটি একা বসে noun এর পরিবর্তে ব্যবহৃত হয় (যেমন: 'Several were absent')। এই প্রশ্নটি অসম্পূর্ণ, কিন্তু যদি 'several' এখানে 'books' কে অনির্দিষ্টভাবে নির্দেশ করে, তাহলে এটি Indefinite Pronoun এর একটি উদাহরণ হিসেবেও বিবেচিত হতে পারে, কারণ এটি একটি অনির্দিষ্ট সংখ্যা বা পরিমাণ নির্দেশ করছে।</p><br><p>অপশন (A) Indefinite Pronoun (অনির্দিষ্ট সর্বনাম): যে pronoun অনির্দিষ্ট ব্যক্তি, বস্তু বা পরিমাণকে নির্দেশ করে। 'Several' একটি Indefinite Pronoun এর উদাহরণ, যখন এটি একা বসে (যেমন: Several of the books are missing)। এই বাক্যে 'several' যদিও একটি noun এর আগে বসেছে, তবে এটি অনির্দিষ্ট পরিমাণ বোঝাচ্ছে, যা Indefinite Pronoun এর বৈশিষ্ট্য।</p><br><p>অপশন (B) Distributive Pronoun (বিভাজক সর্বনাম): Each, either, neither।</p><br><p>অপশন (C) Personal Pronoun (ব্যক্তিবাচক সর্বনাম): I, me, you, he, him, she, her, it, we, us, they, them।</p><br><p>অপশন (D) Relative Pronoun (আপেক্ষিক সর্বনাম): Who, whom, whose, which, that।</p>",
+        },
+        {
+          id: 39,
+          question:
+            'We invested it ourselves. Here "ourselves" is an example of-',
+          options: {
+            a: "Reflexive Pronoun",
+            b: "Reciprocal Pronoun",
+            c: "Indefinite Pronoun",
+            d: "Distributive Pronoun",
+          },
+          correct: "a",
+          explanation:
+            "<p>Reflexive Pronoun (আত্মবাচক সর্বনাম) হলো সেই pronoun যা Subject (কর্তা) নিজেই কোনো কাজ করে এবং সেই কাজের ফল বা ক্রিয়া Subject এর উপরই ফিরে আসে। Reflexive Pronoun এর শেষে '-self' বা '-selves' যুক্ত থাকে।</p><br><p>অপশন (A) Reflexive Pronoun (আত্মবাচক সর্বনাম): 'ourselves' (আওয়ারসেলফস্) একটি Reflexive Pronoun, কারণ এটি 'we' (আমরা) Subject কে নির্দেশ করছে এবং বোঝানো হচ্ছে যে কাজটি আমরা নিজেরাই করেছি।</p><br><p>অপশন (B) Reciprocal Pronoun (পারস্পরিক সর্বনাম): Each other, one another। এটি পারস্পরিক সম্পর্ক বোঝায়।</p><br><p>অপশন (C) Indefinite Pronoun (অনির্দিষ্ট সর্বনাম): Something, nothing, everybody।</p><br><p>অপশন (D) Distributive Pronoun (বিভাজক সর্বনাম): Each, either, neither।</p>",
+        },
+        {
+          id: 40,
+          question:
+            "Identify the pronoun. 'This is the movie which I was talking about'.",
+          options: {
+            a: "this is",
+            b: "the movie",
+            c: "which",
+            d: "talking about",
+          },
+          correct: "c",
+          explanation:
+            "<p>Pronoun (সর্বনাম) হলো সেই শব্দ যা noun (বিশেষ্য) এর পরিবর্তে বসে।</p><br><p>অপশন (A) 'this is' (দিস ইজ): এখানে 'this' একটি Demonstrative Pronoun এবং 'is' একটি Verb। এটি এককভাবে pronoun নয়।</p><br><p>অপশন (B) 'the movie' (দা মুভি): এটি একটি Noun Phrase (বিশেষ্য পদগুচ্ছ), কোনো pronoun নয়।</p><br><p>অপশন (C) 'which' (উইচ): এখানে 'which' একটি Relative Pronoun (আপেক্ষিক সর্বনাম), যা 'the movie' কে নির্দেশ করছে এবং 'I was talking about' এই clause (বাক্যাংশ) কে যুক্ত করছে।</p><br><p>অপশন (D) 'talking about' (টকিং অ্যাবাউট): এটি একটি Verb Phrase (ক্রিয়া পদগুচ্ছ)। 'talking' একটি Present Participle (বর্তমান কৃদন্ত) বা Gerund এবং 'about' একটি Preposition। এটি কোনো pronoun নয়।</p>",
+        },
+        {
+          id: 41,
+          question: "larger than _",
+          options: {
+            a: "it",
+            b: "itself",
+            c: "its",
+            d: "it has",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যটি একটি তুলনামূলক বাক্য (Comparative Sentence) এবং এখানে একটি Reflexive Pronoun (আত্মবাচক সর্বনাম) বা অন্য কোনো উপযুক্ত Pronoun বসাতে হবে। সাধারণত, যখন কোনো কিছুর নিজের আকারের সাথে তুলনা করা হয়, তখন 'itself' ব্যবহৃত হয়। বাক্যটি অসম্পূর্ণ, তবে যদি এর পূর্ণাঙ্গ রূপ এমন হয়: 'The snake is larger than itself' (সাপটি নিজের চেয়েও বড়), যা একটি রূপক অর্থ বোঝাতে পারে। অথবা 'larger than it is' এর সংক্ষিপ্ত রূপও হতে পারে।</p><br><p>অপশন (A) 'it' (ইট) একটি Personal Pronoun, যা Object হিসেবে ব্যবহৃত হতে পারে। 'larger than it' ব্যাকরণগতভাবে সঠিক হতে পারে, তবে 'itself' এখানে আরও সুনির্দিষ্ট হতে পারে যদি স্ব-তুলনা বোঝানো হয়।</p><br><p>অপশন (B) 'itself' (ইটসেলফ) একটি Reflexive Pronoun। এটি 'it' এর Reflexive Form। 'larger than itself' মানে 'নিজের চেয়েও বড়', যা একটি সঠিক ব্যবহার।</p><br><p>অপশন (C) 'its' (ইটস) একটি Possessive Adjective।</p><br><p>অপশন (D) 'it has' (ইট হ্যাজ) একটি Subject এবং Verb, যা এখানে প্রযোজ্য নয়।</p>",
+        },
+        {
+          id: 42,
+          question: "He wanted nobody _ treasure was hidden.",
+          options: {
+            a: "except him, what",
+            b: "else, which",
+            c: "that",
+            d: "another",
+          },
+          correct: "c",
+          explanation:
+            "<p>প্রশ্নটি অসম্পূর্ণ এবং এর অপশনগুলো সঠিকভাবে গঠিত নয়। সম্ভবত, এটি এমন কিছু বোঝাতে চেয়েছিল: 'He wanted nobody <strong>to know that his</strong> treasure was hidden.' অথবা 'He wanted nobody <strong>who knew where his</strong> treasure was hidden.'।</p><br><p>তবে, যদি 'nobody' এর সাথে একটি Relative Pronoun দিয়ে তার সম্পর্ককে বোঝাতে হয়, তাহলে 'that' বা 'who' ব্যবহৃত হতে পারে।</p><br><p>যদি একটি Relative Clause এর প্রয়োজন হয়, তাহলে:</p><br><p>অপশন (C) 'that' (দ্যাট) একটি Relative Pronoun, যা ব্যক্তি বা বস্তুর জন্য ব্যবহৃত হতে পারে। যদি বাক্যটি 'He wanted nobody that his treasure was hidden from.' বা 'He wanted nobody to know that his treasure was hidden.' এমন হতো, তাহলে 'that' একটি অংশ হিসেবে ব্যবহৃত হতে পারত। কিন্তু প্রদত্ত অপশনগুলির মধ্যে, 'that' এখানে সবচেয়ে সম্ভাব্য Relative Pronoun হিসেবে ব্যবহৃত হতে পারে।</p><br><p>অন্যান্য অপশনগুলো ব্যাকরণগতভাবে এই বাক্যের সাথে খাপ খায় না।</p>",
+        },
+        {
+          id: 43,
+          question: "A snake can eat and digest animals much _",
+          options: {
+            a: "that",
+            b: "those",
+            c: "all",
+            d: "another",
+          },
+          correct: "a",
+          explanation:
+            "<p>এই বাক্যটি অসম্পূর্ণ। সম্ভবত এটি এমন কিছু বোঝাতে চেয়েছিল: 'A snake can eat and digest animals much larger than <strong>that</strong>.' (একটি সাপ নিজের চেয়ে অনেক বড় প্রাণী খেতে এবং হজম করতে পারে)। এখানে 'that' দ্বারা সাপটির নিজস্ব আকার বা পূর্ববর্তী উল্লিখিত কোনো কিছুর আকারকে নির্দেশ করা হচ্ছে।</p><br><p>যদি 'much' এর পরে তুলনা বোঝানো হয়, তাহলে 'that' বা 'those' (যদি plural হয়) ব্যবহার করা হয়। এখানে 'animals' plural হওয়ায় 'those' বেশি উপযুক্ত হতে পারত যদি 'animals' এর সাথে 'animals' এর তুলনা বোঝানো হতো। কিন্তু যদি 'much' এর পরে একটি singular noun এর সাথে তুলনা করা হয় যা বোঝানো নেই, তাহলে 'that' ব্যবহৃত হয়।</p><br><p>অপশন (A) 'that' (দ্যাট) একটি Demonstrative Pronoun বা Relative Pronoun হতে পারে। এখানে 'much' এর পরে একটি তুলনামূলক প্রসঙ্গ বোঝাতে 'that' ব্যবহার করা যেতে পারে, যেমন 'much that is' (অনেক কিছু যা)।</p><br><p>অপশন (B) 'those' (দোজ) এটি plural Demonstrative Pronoun। যদি 'much larger than those animals' এমন কিছু বোঝানো হতো, তাহলে এটি উপযুক্ত হতো।</p><br><p>অপশন (C) 'all' (অল) এটি একটি Quantifier (পরিমাণবাচক শব্দ), যা এখানে প্রযোজ্য নয়।</p><br><p>অপশন (D) 'another' (অ্যানাদার) মানে 'অন্য একটি', যা এখানে উপযুক্ত নয়।</p><br><p>যেহেতু উত্তর 'a' দেওয়া আছে, তাই অনুমান করা যায় বাক্যটি এমন: 'A snake can eat and digest animals much <strong>that</strong> are larger than itself.' অথবা 'much <strong>that</strong> is.'</p>",
+        },
+        {
+          id: 44,
+          question: "These are the policeman _ caught the thief.",
+          options: {
+            a: "which",
+            b: "who",
+            c: "that",
+            d: "whose",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যটিতে একটি Relative Pronoun (আপেক্ষিক সর্বনাম) এর প্রয়োজন, যা 'policeman' (পুলিশ) কে নির্দেশ করবে এবং 'caught the thief' ক্রিয়ার Subject (কর্তা) হিসেবে কাজ করবে।</p><br><p>অপশন (A) 'which' (উইচ) একটি Relative Pronoun, যা বস্তু বা প্রাণীর জন্য ব্যবহৃত হয়। মানুষের জন্য ব্যবহৃত হয় না।</p><br><p>অপশন (B) 'who' (হু) একটি Relative Pronoun, যা ব্যক্তি বোঝাতে এবং Relative clause এর Subject হিসেবে ব্যবহৃত হয়। 'These are the policeman who caught the thief' মানে 'এরা সেই পুলিশ যারা চোর ধরেছিল'।</p><br><p>অপশন (C) 'that' (দ্যাট) একটি Relative Pronoun, যা ব্যক্তি বা বস্তু উভয় ক্ষেত্রেই ব্যবহৃত হতে পারে। এটিও এই বাক্যে সঠিক হতে পারত। তবে 'who' মানুষের জন্য বেশি নির্দিষ্ট।</p><br><p>অপশন (D) 'whose' (হুজ) একটি Relative Pronoun, যা মালিকানা বোঝাতে ব্যবহৃত হয়।</p>",
+        },
+        {
+          id: 45,
+          question:
+            "The tickets are 20 taka each. Here 'each' functions as a/an-",
+          options: {
+            a: "Verb",
+            b: "Determiner",
+            c: "Pronoun",
+            d: "Adverb",
+          },
+          correct: "c",
+          explanation:
+            "<p>এই বাক্যে 'each' (ইচ) শব্দটি 'tickets' এর সংখ্যা বা পরিমাণকে আলাদাভাবে নির্দেশ করছে এবং এটি কোনো noun এর পরিবর্তে বসেছে।</p><br><p>অপশন (A) Verb (ক্রিয়া): 'each' কোনো ক্রিয়া নয়।</p><br><p>অপশন (B) Determiner (নির্ধারক): 'each' একটি Determiner হতে পারে যখন এটি একটি noun এর আগে বসে (যেমন: Each student received a book)। কিন্তু এখানে 'each' স্বাধীনভাবে ব্যবহৃত হয়েছে, যা 'the tickets' কে আলাদাভাবে নির্দেশ করছে।</p><br><p>অপশন (C) Pronoun (সর্বনাম): এখানে 'each' একটি Distributive Pronoun (বিভাজক সর্বনাম) হিসেবে কাজ করছে, কারণ এটি 'tickets' কে নির্দেশ করছে এবং 'প্রতিটি' মূল্য বোঝাতে ব্যবহৃত হয়েছে।</p><br><p>অপশন (D) Adverb (ক্রিয়া বিশেষণ): 'each' কোনো ক্রিয়া বিশেষণ নয়।</p>",
+        },
+        {
+          id: 46,
+          question: "A gander is a male _",
+          options: {
+            a: "goose",
+            b: "horse",
+            c: "duck",
+            d: "rhinoceros",
+          },
+          correct: "a",
+          explanation:
+            "<p>Gander (গ্যান্ডার) হলো একটি পুরুষ হাঁস। হাঁসের স্ত্রীলিঙ্গকে 'goose' (গুজ) বলা হয়।</p><br><p>অপশন (A) 'goose' (গুজ) হলো Gander এর স্ত্রীলিঙ্গ এবং সাধারণ হাঁস বোঝাতে ব্যবহৃত হয়।</p><br><p>অপশন (B) 'horse' (হর্স) মানে ঘোড়া। পুরুষ ঘোড়াকে 'stallion' বা 'colt' (যদি বাচ্চা হয়) এবং স্ত্রী ঘোড়াকে 'mare' বলা হয়।</p><br><p>অপশন (C) 'duck' (ডাক) মানে পাতিহাঁস। পুরুষ পাতিহাঁসকে 'drake' এবং স্ত্রী পাতিহাঁসকে 'duck' বলা হয়।</p><br><p>অপশন (D) 'rhinoceros' (রাইনোসেরস) মানে গণ্ডার।</p>",
+        },
+        {
+          id: 47,
+          question: "Which one is the relative pronoun?",
+          options: {
+            a: "he",
+            b: "you",
+            c: "his",
+            d: "who",
+          },
+          correct: "d",
+          explanation:
+            "<p>Relative Pronoun (আপেক্ষিক সর্বনাম) হলো সেই pronoun যা দুটি বাক্য বা বাক্যাংশকে যুক্ত করে এবং পূর্ববর্তী noun বা pronoun কে নির্দেশ করে।</p><br><p>অপশন (A) 'he' (হি) একটি Personal Pronoun (ব্যক্তিবাচক সর্বনাম)।</p><br><p>অপশন (B) 'you' (ইউ) একটি Personal Pronoun (ব্যক্তিবাচক সর্বনাম)।</p><br><p>অপশন (C) 'his' (হিজ) একটি Possessive Pronoun বা Possessive Adjective।</p><br><p>অপশন (D) 'who' (হু) একটি Relative Pronoun। এটি ব্যক্তি বোঝাতে ব্যবহৃত হয় এবং দুটি বাক্যকে সংযুক্ত করে। যেমন: 'The man who is standing there is my brother.' (যে লোকটি সেখানে দাঁড়িয়ে আছে সে আমার ভাই)।</p>",
+        },
+        {
+          id: 48,
+          question: "The following of which is a common gender?",
+          options: {
+            a: "orphan",
+            b: "gander",
+            c: "cock",
+            d: "pea-hen",
+          },
+          correct: "a",
+          explanation:
+            "<p>Common Gender (উভয়লিঙ্গ) হলো সেই noun যা পুরুষ ও স্ত্রী উভয়কেই বোঝাতে পারে।</p><br><p>অপশন (A) 'orphan' (অরফান) মানে 'এতিম' বা 'অনাথ', যা ছেলে বা মেয়ে উভয়কেই বোঝাতে পারে। তাই 'orphan' হলো Common Gender এর উদাহরণ।</p><br><p>অপশন (B) 'gander' (গ্যান্ডার) হলো পুরুষ হাঁস, তাই এটি Masculine Gender (পুংলিঙ্গ)। এর Feminine Gender হলো 'goose'।</p><br><p>অপশন (C) 'cock' (কক) হলো পুরুষ মুরগি, তাই এটি Masculine Gender। এর Feminine Gender হলো 'hen' (হ্যান)।</p><br><p>অপশন (D) 'pea-hen' (পি-হ্যান) হলো স্ত্রী ময়ূর, তাই এটি Feminine Gender। এর Masculine Gender হলো 'peacock' (পিকক)।</p>",
+        },
+        {
+          id: 49,
+          question: "Opposite gender of 'monk' is -",
+          options: {
+            a: "female monk",
+            b: "monkness",
+            c: "nun",
+            d: "none",
+          },
+          correct: "c",
+          explanation:
+            "<p>Monk (মঙ্ক) হলো একজন পুরুষ সন্ন্যাসী। এর বিপরীত লিঙ্গ হলো একজন নারী সন্ন্যাসী।</p><br><p>অপশন (A) 'female monk' (ফিমেল মঙ্ক): এটি সাধারণত ব্যবহৃত হয় না, যদিও অর্থ বোঝায়। একটি নির্দিষ্ট শব্দ আছে।</p><br><p>অপশন (B) 'monkness' (মঙ্কনেস): এটি কোনো সঠিক শব্দ নয়।</p><br><p>অপশন (C) 'nun' (নান) হলো একজন নারী সন্ন্যাসী বা ধর্মপ্রাণা মহিলা, যা 'monk' এর সঠিক বিপরীত লিঙ্গ।</p><br><p>অপশন (D) 'none' (নান): এটি প্রযোজ্য নয়।</p>",
+        },
+        {
+          id: 50,
+          question: "Nobody likes her; She talks about _ all the time.",
+          options: {
+            a: "self",
+            b: "herself",
+            c: "hers",
+            d: "her",
+          },
+          correct: "b",
+          explanation:
+            "<p>এই বাক্যটিতে 'She' (শি) Subject (কর্তা) নিজেই Object (কর্ম) হিসেবে কাজ করছে, কারণ সে নিজের সম্পর্কেই কথা বলছে। যখন Subject নিজেই ক্রিয়াটির Object হয়, তখন Reflexive Pronoun (আত্মবাচক সর্বনাম) ব্যবহৃত হয়।</p><br><p>অপশন (A) 'self' একটি noun এবং এটি pronoun এর সাথে যুক্ত হয়ে Reflexive Pronoun তৈরি করে (যেমন: myself, yourself)। এটি একা ব্যবহৃত হয় না।</p><br><p>অপশন (B) 'herself' (হারসেলফ) হলো 'she' এর Reflexive Pronoun। 'She talks about herself' মানে 'সে সারাক্ষণ নিজের সম্পর্কে কথা বলে', যা বাক্যটিকে সঠিক এবং অর্থপূর্ণ করে তোলে।</p><br><p>অপশন (C) 'hers' (হারস) একটি Possessive Pronoun, যা মালিকানা বোঝায়। যেমন: 'The book is hers.'।</p><br><p>অপশন (D) 'her' একটি Objective Personal Pronoun। এটি ব্যবহৃত হতো যদি সে অন্য কাউকে নিয়ে কথা বলত। যেমন: 'She talks about her friend.'</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
